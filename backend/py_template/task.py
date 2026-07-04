@@ -25,12 +25,23 @@ class ResourceEntry:
         self.name = name
         self.buildTime = buildTime
 
+def convert(slug):
+    strs = slug.split("-") # Split the slug by hyphens
+    words = []
+
+    # Capitalize each word and add to the list
+    for i in strs:
+        words.append(i.capitalize())
+
+    # Join the capitalized words with spaces to form the final title
+    result = " ".join(words)
+    return result
+
 # ==== Task 1 =================================================================
 @app.route("/slugToTitle", methods=["GET"])
 def slug_to_title():
     slug = request.args.get("slug")
-    # TODO: Convert hyphenated lowercase string into title-cased string
-    return "", 200
+    return convert(slug), 200
 
 # ==== Task 2 =================================================================
 @app.route("/projectEntry", methods=["POST"])
