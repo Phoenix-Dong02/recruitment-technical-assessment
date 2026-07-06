@@ -1,5 +1,6 @@
 from flask import Flask, request
 from typing import List, Dict, Union
+from collections import defaultdict
 
 # ==== DO NOT CHANGE ==========================================================
 app = Flask(__name__)
@@ -44,7 +45,6 @@ def convert(slug):
     # Join the capitalized words with spaces to form the final title
     result = " ".join(words)
     return result
-git status
 # ==== Task 1 =================================================================
 @app.route("/slugToTitle", methods=["GET"])
 def slug_to_title():
@@ -76,13 +76,41 @@ def add_project_entry():
     
     return "", 400
 
+def collect(project_name, multiplier, totals):
+    entry = project_registry[project_name]
+    for dep in entry["requiredResources"]:
+        dep_name = dep["name"]
+        dep_qty = dep["quantity"]
+        if dep_name not in project_registry:
+            raise KeyError(dep_name)
+        elif project_registry[dep_name]["type"] == "resource":
+            totals[dep_name] += dep_qty * multiplier    
+        else:
+            collect(dep_name, multiplier * dep_qty, totals) 
 
 # ==== Task 3 =================================================================
 @app.route("/summary", methods=["GET"])
 def get_summary():
     name = request.args.get("name")
-    # TODO: Lookup entry and compute total build time and base resources
-    return "", 200
+    resource_counts = defaultdict(int)
+    build_times = 0
+    if name not in project_registry:
+        return "", 400
+    if project_registry[name]["type"] != "project":
+        return "", 400
+    try:
+        collect(name, 1, resource_counts)
+    except KeyError:
+        return "", 400
+    for resource_name, quantity in resource_counts.items():
+        build_times += project_registry[resource_name]["buildTime"] * quantity
+    summary = {
+        "name": name,
+        "buildTime": build_times,
+        "resources": [{"name": n, "quantity": q} for n, q in resource_counts.items()]
+    }
+    return summary, 200
+    
 
 
 # ==== DO NOT CHANGE ==========================================================
