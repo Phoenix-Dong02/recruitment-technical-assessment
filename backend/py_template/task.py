@@ -75,14 +75,14 @@ def add_project_entry():
             return "", 200
     
     return "", 400
-
+# collects the total resources names and quantities needed to build a project
 def collect(project_name, multiplier, totals):
     entry = project_registry[project_name]
     for dep in entry["requiredResources"]:
         dep_name = dep["name"]
         dep_qty = dep["quantity"]
         if dep_name not in project_registry:
-            raise KeyError(dep_name)
+            raise KeyError(dep_name) # raise KeyError if the dependency is not found in the registry
         elif project_registry[dep_name]["type"] == "resource":
             totals[dep_name] += dep_qty * multiplier    
         else:
@@ -94,16 +94,20 @@ def get_summary():
     name = request.args.get("name")
     resource_counts = defaultdict(int)
     build_times = 0
+    # check if the project name exists in the registry and is of type "project"
     if name not in project_registry:
         return "", 400
     if project_registry[name]["type"] != "project":
         return "", 400
+    # collect the total resources needed to build the project
     try:
         collect(name, 1, resource_counts)
     except KeyError:
         return "", 400
+    # calculate the total build time based on the resources collected
     for resource_name, quantity in resource_counts.items():
         build_times += project_registry[resource_name]["buildTime"] * quantity
+    # create the summary dictionary with the project name, total build time, and resources needed
     summary = {
         "name": name,
         "buildTime": build_times,
